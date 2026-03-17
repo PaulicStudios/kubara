@@ -2,8 +2,8 @@ name: APT Repository
 
 on:
   workflow_run:
-    workflows: ["release"]
-    types: [completed]
+    workflows: [ "release" ]
+    types: [ completed ]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -90,9 +90,21 @@ jobs:
           cp dists/stable/main/Packages dists/stable/main/binary-arm64/
           cp dists/stable/main/Packages.gz dists/stable/main/binary-arm64/
 
-          # 5. Generate Release file
+          # 5. Generate Release file with Metadata
           cd dists/stable
-          apt-ftparchive release . > Release
+          
+          # Create a config file with the required APT metadata
+          cat <<EOF > apt-release.conf
+          APT::FTPArchive::Release::Origin "Kubara";
+          APT::FTPArchive::Release::Label "Kubara";
+          APT::FTPArchive::Release::Suite "stable";
+          APT::FTPArchive::Release::Codename "stable";
+          APT::FTPArchive::Release::Architectures "amd64 arm64";
+          APT::FTPArchive::Release::Components "main";
+          EOF
+          
+          # Run ftparchive using the new config
+          apt-ftparchive -c apt-release.conf release . > Release
 
       - name: Sign Repository
         run: |
