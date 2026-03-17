@@ -1,0 +1,107 @@
+name: APT Repository
+
+on:
+  workflow_run:
+    workflows: ["release"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build-and-deploy:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: github-pages
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Get tag name
+        run: |
+          set -e
+          TAG=$(git describe --tags --exact-match ${{ github.event.workflow_run.head_sha }})
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev apt-utils gnupg
+
+      - name: Import GPG key
+        run: |
+          set -e
+          echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | gpg --import
+
+      - name: Download artifacts
+        run: |
+          set -e
+          gh release download $TAG --pattern "*.deb"
+
+      - name: Build directory structure
+        run: |
+          set -e
+          mkdir -p public/pool/main
+          mkdir -p public/dists/stable/main/binary-amd64
+          mkdir -p public/dists/stable/main/binary-arm64
+
+      - name: Move artifacts
+        run: |
+          set -e
+          mv *.deb public/pool/main/
+
+      - name: Generate Packages files
+        run: |
+          set -e
+          cd public
+          dpkg-scanpackages pool/main /dev/null > dists/stable/main/Packages
+          gzip -9c < dists/stable/main/Packages > dists/stable/main/Packages.gz
+
+      - name: Copy Packages for amd64
+        run: |
+          set -e
+          cd public/dists/stable/main
+          cp Packages binary-amd64/
+          cp Packages.gz binary-amd64/
+
+      - name: Copy Packages for arm64
+        run: |
+          set -e
+          cd public/dists/stable/main
+          cp Packages binary-arm64/
+          cp Packages.gz binary-arm64/
+
+      - name: Generate Release file
+        run: |
+          set -e
+          cd public/dists/stable
+          apt-ftparchive release . > Release
+
+      - name: Sign Release file
+        run: |
+          set -e
+          cd public/dists/stable
+          gpg --clearsign -o InRelease Release
+          gpg -abs -o Release.gpg Release
+
+      - name: Copy public key
+        run: |
+          set -e
+          cp apt-public.key public/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public/
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
