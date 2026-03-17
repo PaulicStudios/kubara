@@ -71,39 +71,32 @@ jobs:
       - name: Build APT Repository Structure
         run: |
           set -e
-          # 1. Create directory structure
           mkdir -p public/pool/main
           mkdir -p public/dists/stable/main/binary-amd64
           mkdir -p public/dists/stable/main/binary-arm64
-
-          # 2. Move downloaded deb packages
-          mv *.deb public/pool/main/
-
-          # 3. Generate Packages files
-          cd public
-          dpkg-scanpackages pool/main /dev/null > dists/stable/main/Packages
-          gzip -9c < dists/stable/main/Packages > dists/stable/main/Packages.gz
-
-          # 4. Replicate Packages to architecture directories
-          cp dists/stable/main/Packages dists/stable/main/binary-amd64/
-          cp dists/stable/main/Packages.gz dists/stable/main/binary-amd64/
-          cp dists/stable/main/Packages dists/stable/main/binary-arm64/
-          cp dists/stable/main/Packages.gz dists/stable/main/binary-arm64/
-
-          # 5. Generate Release file with Metadata
-          cd dists/stable
           
-          # Create a config file with the required APT metadata
+          mv *.deb public/pool/main/
+          
+          cd public
+          
+          # 1. Scan and build Packages for amd64 ONLY
+          dpkg-scanpackages -a amd64 pool/main /dev/null > dists/stable/main/binary-amd64/Packages
+          gzip -9c < dists/stable/main/binary-amd64/Packages > dists/stable/main/binary-amd64/Packages.gz
+          
+          # 2. Scan and build Packages for arm64 ONLY
+          dpkg-scanpackages -a arm64 pool/main /dev/null > dists/stable/main/binary-arm64/Packages
+          gzip -9c < dists/stable/main/binary-arm64/Packages > dists/stable/main/binary-arm64/Packages.gz
+          
+          # 3. Generate Release file with Metadata
+          cd dists/stable
           cat <<EOF > apt-release.conf
-          APT::FTPArchive::Release::Origin "Kubara";
+          APT::FTPArchive::Release::Origin "PaulicStudios";
           APT::FTPArchive::Release::Label "Kubara";
           APT::FTPArchive::Release::Suite "stable";
           APT::FTPArchive::Release::Codename "stable";
           APT::FTPArchive::Release::Architectures "amd64 arm64";
           APT::FTPArchive::Release::Components "main";
           EOF
-          
-          # Run ftparchive using the new config
           apt-ftparchive -c apt-release.conf release . > Release
 
       - name: Sign Repository
