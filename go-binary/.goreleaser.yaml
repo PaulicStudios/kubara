@@ -3,7 +3,7 @@ version: 2
 project_name: kubara
 release:
   github:
-    owner: kubara-io
+    owner: paulicstudios
     name: kubara
   draft: true
   replace_existing_draft: true
@@ -78,24 +78,24 @@ builds:
       - -X 'main.version={{ .Tag }}'
       - -X 'main.commit={{ .Commit }}'
       - -X 'main.date={{ .Date }}'
-archives:
-  - id: windows-archives
-    ids:
-      - kubara-windows
-    formats:
-      - zip
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    files:
-      - none*
-  - id: unix-archives
-    ids:
-      - kubara-linux
-      - kubara-macos
-    formats:
-      - tar.gz
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    files:
-      - none*
+#archives:
+#  - id: windows-archives
+#    ids:
+#      - kubara-windows
+#    formats:
+#      - zip
+#    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+#    files:
+#      - none*
+#  - id: unix-archives
+#    ids:
+#      - kubara-linux
+#      - kubara-macos
+#    formats:
+#      - tar.gz
+#    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+#    files:
+#      - none*
 #notarize:
 #  macos:
 #      # Whether this configuration is enabled or not.
