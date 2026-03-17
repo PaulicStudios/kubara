@@ -4,6 +4,15 @@ on:
   workflow_run:
     workflows: ["release"]
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'The release tag to build the APT repo for (e.g., v1.2.3)'
+        required: true
+      upstream_repo:
+        description: 'The upstream repository (owner/repo) to pull the release from'
+        required: true
+        default: 'kubara-io/kubara'
 
 permissions:
   contents: read
@@ -22,14 +31,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || inputs.release_tag }}
           fetch-depth: 0
 
       - name: Get tag name
+        id: get_tag
         run: |
           set -e
-          TAG=$(git describe --tags --exact-match ${{ github.event.workflow_run.head_sha }})
+          if [ -n "${{ github.event.workflow_run.head_sha }}" ]; then
+            TAG=$(git describe --tags --exact-match ${{ github.event.workflow_run.head_sha }})
+          else
+            TAG=${{ inputs.release_tag }}
+          fi
           echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "tag_name=$TAG" >> $GITHUB_OUTPUT
 
       - name: Install dependencies
         run: |
@@ -45,7 +60,8 @@ jobs:
       - name: Download artifacts
         run: |
           set -e
-          gh release download $TAG --pattern "*.deb"
+          REPO=${{ inputs.upstream_repo || github.repository }}
+          gh release download ${{ steps.get_tag.outputs.tag_name }} --repo $REPO --pattern "*.deb"
 
       - name: Build directory structure
         run: |
