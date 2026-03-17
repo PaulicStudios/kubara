@@ -24,9 +24,13 @@ env:
 
 jobs:
   build-and-deploy:
-    if: github.event.workflow_run.conclusion == 'success'
+    # Run if triggered manually OR if the upstream release workflow succeeded
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    environment: github-pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,85 +38,76 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || inputs.release_tag }}
           fetch-depth: 0
 
-      - name: Get tag name
+      - name: Determine Target Tag
         id: get_tag
         run: |
           set -e
-          if [ -n "${{ github.event.workflow_run.head_sha }}" ]; then
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
             TAG=$(git describe --tags --exact-match ${{ github.event.workflow_run.head_sha }})
           else
-            TAG=${{ inputs.release_tag }}
+            TAG="${{ inputs.release_tag }}"
           fi
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "tag_name=$TAG" >> $GITHUB_OUTPUT
 
-      - name: Install dependencies
+      - name: Install APT Dependencies
         run: |
-          set -e
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev apt-utils gnupg
+          sudo apt-get install -y dpkg-dev apt-utils
 
       - name: Import GPG key
-        run: |
-          set -e
-          echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | gpg --import
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Download artifacts
+      - name: Download Release Artifacts (*.deb)
         run: |
           set -e
-          REPO=${{ inputs.upstream_repo || github.repository }}
+          REPO="${{ inputs.upstream_repo || github.repository }}"
           gh release download ${{ steps.get_tag.outputs.tag_name }} --repo $REPO --pattern "*.deb"
 
-      - name: Build directory structure
+      - name: Build APT Repository Structure
         run: |
           set -e
+          # 1. Create directory structure
           mkdir -p public/pool/main
           mkdir -p public/dists/stable/main/binary-amd64
           mkdir -p public/dists/stable/main/binary-arm64
 
-      - name: Move artifacts
-        run: |
-          set -e
+          # 2. Move downloaded deb packages
           mv *.deb public/pool/main/
 
-      - name: Generate Packages files
-        run: |
-          set -e
+          # 3. Generate Packages files
           cd public
           dpkg-scanpackages pool/main /dev/null > dists/stable/main/Packages
           gzip -9c < dists/stable/main/Packages > dists/stable/main/Packages.gz
 
-      - name: Copy Packages for amd64
-        run: |
-          set -e
-          cd public/dists/stable/main
-          cp Packages binary-amd64/
-          cp Packages.gz binary-amd64/
+          # 4. Replicate Packages to architecture directories
+          cp dists/stable/main/Packages dists/stable/main/binary-amd64/
+          cp dists/stable/main/Packages.gz dists/stable/main/binary-amd64/
+          cp dists/stable/main/Packages dists/stable/main/binary-arm64/
+          cp dists/stable/main/Packages.gz dists/stable/main/binary-arm64/
 
-      - name: Copy Packages for arm64
-        run: |
-          set -e
-          cd public/dists/stable/main
-          cp Packages binary-arm64/
-          cp Packages.gz binary-arm64/
-
-      - name: Generate Release file
-        run: |
-          set -e
-          cd public/dists/stable
+          # 5. Generate Release file
+          cd dists/stable
           apt-ftparchive release . > Release
 
-      - name: Sign Release file
+      - name: Sign Repository
         run: |
           set -e
           cd public/dists/stable
-          gpg --clearsign -o InRelease Release
-          gpg -abs -o Release.gpg Release
+          # Use the fingerprint output from the GPG action to explicitly sign
+          gpg --batch --yes --local-user "${{ steps.import-gpg.outputs.fingerprint }}" --clearsign -o InRelease Release
+          gpg --batch --yes --local-user "${{ steps.import-gpg.outputs.fingerprint }}" -abs -o Release.gpg Release
 
-      - name: Copy public key
+      - name: Export Public Key
         run: |
           set -e
-          cp apt-public.key public/
+          # Dynamically export the public key so users can download and trust it.
+          # (Replaces the need to keep a static apt-public.key file in your repo)
+          gpg --armor --export "${{ steps.import-gpg.outputs.fingerprint }}" > public/apt-public.key
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -120,4 +115,5 @@ jobs:
           path: public/
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
