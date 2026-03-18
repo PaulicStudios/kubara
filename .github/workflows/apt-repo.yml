@@ -9,10 +9,6 @@ on:
       release_tag:
         description: 'The release tag to build the APT repo for (e.g., v1.2.3)'
         required: true
-      upstream_repo:
-        description: 'The upstream repository (owner/repo) to pull the release from'
-        required: true
-        default: 'kubara-io/kubara'
 
 permissions:
   contents: write # Changed: Required to push commits to the gh-pages branch
@@ -63,7 +59,7 @@ jobs:
       - name: Download Release Artifacts (*.deb)
         run: |
           set -e
-          REPO="${{ inputs.upstream_repo || github.repository }}"
+          REPO="${{ github.repository }}"
           gh release download ${{ steps.get_tag.outputs.tag_name }} --repo $REPO --pattern "*.deb"
 
       - name: Build APT Repository Structure
