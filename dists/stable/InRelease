@@ -1,0 +1,41 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Architectures: amd64 arm64
+Codename: stable
+Components: main
+Date: Wed, 18 Mar 2026 08:43:05 +0000
+Label: Kubara
+Origin: kubara-io
+Suite: stable
+MD5Sum:
+ d4fa304530767204cb1a5bf1ca2b1a0a              145 Release
+ d37ff6d43c8fe1a14c44f44d299c56a4              454 main/binary-amd64/Packages
+ 722df2bb48cf1d4516f8ed1d425b05d8              338 main/binary-amd64/Packages.gz
+ d1686e2c582ebd1ca94c41af197fa285              424 main/binary-arm64/Packages
+ a52fd271f1c29d534e10c0fdbbf4121a              324 main/binary-arm64/Packages.gz
+SHA1:
+ 1418a08907af20e7e74e83ab2ccdaf93aa68dbb5              145 Release
+ cebdf05e368a110caf9c56bf881aa076a23926f6              454 main/binary-amd64/Packages
+ 3bc75a7ddaa546c0eafb21e8668863476d80ed62              338 main/binary-amd64/Packages.gz
+ 56f0c3f3667a8ec4fc1343ab85c4bfb43cb7a612              424 main/binary-arm64/Packages
+ 31427b2fe35492620195ceca451e34c89a208cde              324 main/binary-arm64/Packages.gz
+SHA256:
+ cf0a509052a0e39e34c6db4eca2636b09afbe704673f358ca493afdb196bc41a              145 Release
+ 2087eed2238fde1747ca957d74f37c40b2c2f9f9d6ce9e796fa67ee06a673e13              454 main/binary-amd64/Packages
+ d186964f598d285d578a872164c51fdd96890985d45c377610b36b974c3eda25              338 main/binary-amd64/Packages.gz
+ b8896d0edc22ba454650360b36e525852bc33c659e19106629cf8ab3b2afcf2c              424 main/binary-arm64/Packages
+ a60bb7d9cd452a8b7f4d6b9e58118dd12a929093d824c9a3a7a9a5f1b24eec17              324 main/binary-arm64/Packages.gz
+SHA512:
+ d7d19c7c80252d96db5d968522dd4e223783f2c8c20c6c969c87b78bd8afc47822b58c52bb9bd11758fa942d68af5d65073d5dda183b9d64612aeb9e28e2f864              145 Release
+ adc70f715bbefab11f75cbd1000936cb165a07ff4dd2befd6a6d08b036cd90ea9d7f0933bd1f9c987c2f63868714a2dc2b853d96e629bce5ad2fc6510b58e789              454 main/binary-amd64/Packages
+ 9a91c7d698c2945e545598902f695f4a5c57d51a0b9d0fb62e5ae1e78b557646c34415d9d42f2229490702c936433bc3391cf1f2a7ec60f77c833e29e8ed9fd3              338 main/binary-amd64/Packages.gz
+ d6f43fe44fca84cee74a5a93e8abc06c7a110df90f18a7066efd969e924e9fa3441dc9280db573a3dd4a7416fc9a2da0f0f45c6035d09cbaa22f5239b36b26ab              424 main/binary-arm64/Packages
+ 29087f00732ba557c72048595698d248d4b4778e6dbfdd4fdc9a36cf3bd31edbbb5111e8901cb452209d9a477abf53cac3cc168bfa204307154d0a17b256467e              324 main/binary-arm64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARYKAB0WIQQv3nsX3HwBpldsr927/G3g8QE+egUCabplmQAKCRC7/G3g8QE+
+egr3AQCwgEnzdktyCvZAC4m79j9kJejVWuPJ4wilqFo/fjXXIAD/bC1Ax0vKIZcV
+o+IiBSV6K450OOV7vXxAfxpTK11r1gM=
+=Qe4k
+-----END PGP SIGNATURE-----

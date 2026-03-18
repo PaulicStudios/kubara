@@ -1,0 +1,13 @@
+Package: kubara
+Version: 0.0.3~test-apt
+Architecture: arm64
+Maintainer: Kubara Maintainer <kubara@schwary.digits>
+Installed-Size: 52352
+Filename: pool/main/kubara_0.0.3-test-apt_linux_arm64.deb
+Size: 17888534
+MD5sum: 4f07f1e144d74ca16eec1f171bbcc8bd
+SHA1: 7182c42b783b2c0b5103147cf680ec43a8817cc9
+SHA256: 88db2c52b33591314d715965ca20a4ad02fa1105d190e80002dbae6b44739779
+Priority: optional
+Description: no description given
+
