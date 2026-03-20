@@ -400,6 +400,83 @@ func TestTemplateFiles(t *testing.T) {
 			},
 		},
 		{
+			name:     "Success: Keep ArgoCD rbac and params under configs when oauth2 is disabled",
+			fileList: []string{"customer-service-catalog/helm/example/argo-cd/values.yaml.tplt"},
+			context: map[string]any{
+				"cluster": map[string]interface{}{
+					"type":    "controlplane",
+					"name":    "test-cluster",
+					"stage":   "dev",
+					"dnsName": "test.example.com",
+					"ssoOrg":  "myorg",
+					"ssoTeam": "myteam",
+					"services": map[string]interface{}{
+						"oauth2Proxy": map[string]interface{}{
+							"status": "disabled",
+						},
+						"certManager": map[string]interface{}{
+							"status": "enabled",
+							"clusterIssuer": map[string]interface{}{
+								"name": "letsencrypt-prod",
+							},
+						},
+						"metalLb": map[string]interface{}{
+							"status": "enabled",
+						},
+						"kubePrometheusStack": map[string]interface{}{
+							"status": "enabled",
+						},
+					},
+					"publicLoadbalancerIP": "1.2.3.4",
+					"argocd": map[string]interface{}{
+						"repo": map[string]interface{}{
+							"https": map[string]interface{}{
+								"managed": map[string]interface{}{
+									"url":            "https://github.com/example/repo",
+									"path":           "managed-service-catalog/helm",
+									"targetRevision": "main",
+								},
+								"customer": map[string]interface{}{
+									"url":            "https://github.com/example/repo",
+									"path":           "customer-service-catalog/helm",
+									"targetRevision": "main",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+			validate: func(t *testing.T, results []TemplateResult) {
+				require.Len(t, results, 1)
+				assert.Equal(t, "customer-service-catalog/helm/example/argo-cd/values.yaml.tplt", results[0].Path)
+				assert.NoError(t, results[0].Error)
+
+				var rendered map[string]interface{}
+				require.NoError(t, yaml.Unmarshal([]byte(results[0].Content), &rendered))
+
+				argoCD, ok := rendered["argo-cd"].(map[string]interface{})
+				require.True(t, ok)
+
+				configs, ok := argoCD["configs"].(map[string]interface{})
+				require.True(t, ok)
+
+				_, hasConfigRbac := configs["rbac"]
+				assert.True(t, hasConfigRbac)
+				_, hasConfigParams := configs["params"]
+				assert.True(t, hasConfigParams)
+				_, hasConfigCM := configs["cm"]
+				assert.False(t, hasConfigCM)
+
+				server, ok := argoCD["server"].(map[string]interface{})
+				require.True(t, ok)
+				_, hasServerRbac := server["rbac"]
+				assert.False(t, hasServerRbac)
+				_, hasServerParams := server["params"]
+				assert.False(t, hasServerParams)
+			},
+		},
+		{
 			name:     "Success: Successfully copy non-template files",
 			fileList: []string{"managed-service-catalog/terraform/modules/ske-cluster/main.tf"},
 			context:  map[string]any{},
